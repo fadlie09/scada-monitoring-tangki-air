@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 import random
 
 class SCADATangki:
@@ -6,6 +7,10 @@ class SCADATangki:
         self.level = 50
         self.mode_otomatis = True
         self.pompa_status = False
+
+        # Penanda agar alarm tidak muncul berkali-kali
+        self.sudah_alarm_kosong = False
+        self.sudah_alarm_penuh = False
 
         self.root = root
         self.root.title("SCADA - Monitoring Tangki Air")
@@ -52,6 +57,9 @@ class SCADATangki:
         if not self.mode_otomatis:
             self.pompa_status = False
 
+    def tampilkan_alarm(self, pesan, warna):
+        messagebox.showwarning("⚠️ Alarm!", pesan)
+
     def update(self):
         if self.mode_otomatis:
             if self.level < 20:
@@ -66,11 +74,11 @@ class SCADATangki:
 
         self.level = max(0, min(100, self.level))
 
-        # Update Tampilan
+        # Update GUI
         self.label_level.config(text=f"Level Air: {self.level}%")
         self.canvas.coords(self.bar, 0, 0, 2*self.level, 30)
 
-        # Status
+        # Status warna
         if self.level <= 20:
             status = "KOSONG"
             warna = "red"
@@ -84,9 +92,23 @@ class SCADATangki:
         self.label_status.config(text=f"Status: {status}", fg=warna)
         self.label_pompa.config(text=f"Pompa: {'ON' if self.pompa_status else 'OFF'}")
 
+        # Cek alarm
+        if self.level < 10 and not self.sudah_alarm_kosong:
+            self.tampilkan_alarm("⚠️ Tangki Hampir Kosong!", "red")
+            self.sudah_alarm_kosong = True
+        elif self.level >= 10:
+            self.sudah_alarm_kosong = False  # Reset alarm jika aman
+
+        if self.level > 90 and not self.sudah_alarm_penuh:
+            self.tampilkan_alarm("⚠️ Tangki Hampir Penuh!", "orange")
+            self.sudah_alarm_penuh = True
+        elif self.level <= 90:
+            self.sudah_alarm_penuh = False  # Reset alarm jika aman
+
         self.root.after(500, self.update)
 
 # Jalankan Aplikasi
 root = tk.Tk()
 app = SCADATangki(root)
 root.mainloop()
+
